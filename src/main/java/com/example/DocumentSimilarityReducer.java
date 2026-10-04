@@ -33,17 +33,28 @@ import org.apache.hadoop.mapreduce.Reducer;
  *       reduce() only stores each document, and the pairwise comparison happens in
  *       cleanup(), which Hadoop calls once after the last reduce() call.
  */
-public class DocumentSimilarityReducer extends Reducer<Text, Text, Text, Text> {
+public class DocumentSimilarityReducer extends Reducer<Text, Text, Text, NullWritable> {
+
+    // All documents, keyed by ID. TreeMap keeps the IDs in ascending String order,
+    // so every pair is written as "smaller ID, larger ID".
+    private final Map<String, Set<String>> documents = new TreeMap<>();
 
     @Override
     protected void reduce(Text key, Iterable<Text> values, Context context)
             throws IOException, InterruptedException {
-        // TODO
+        // Cannot compare yet: just store this document's word set.
+        Set<String> words = documents.computeIfAbsent(key.toString(), k -> new HashSet<>());
+        for (Text value : values) {
+            for (String word : value.toString().split("\\s+")) {
+                if (!word.isEmpty()) {
+                    words.add(word);
+                }
+            }
+        }
     }
 
     @Override
     protected void cleanup(Context context) throws IOException, InterruptedException {
-        // TODO (only needed if your design compares documents here)
         List<String> ids = new ArrayList<>(documents.keySet());
 
         for (int i = 0; i < ids.size(); i++) {
