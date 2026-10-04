@@ -2,6 +2,7 @@ package com.example.controller;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
@@ -41,8 +42,17 @@ public class DocumentSimilarityDriver {
         }
 
         Configuration conf = new Configuration();
-        // TODO: configure the job — see the class comment above and Controller.java from L4.
+        // TODO: configure the job — see the class comment above and Controller.java from L4. //
         Job job = Job.getInstance(conf, "document similarity");
+        job.setJarByClass(DocumentSimilarityDriver.class);
+        job.setMapperClass(DocumentSimilarityMapper.class);
+        job.setReducerClass(DocumentSimilarityReducer.class);
+        job.setNumReduceTasks(1);
+
+        job.setMapOutputKeyClass(Text.class);
+        job.setMapOutputValueClass(Text.class);
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(NullWritable.class);
 
         FileInputFormat.addInputPath(job, new Path(args[0]));
         FileOutputFormat.setOutputPath(job, new Path(args[1]));

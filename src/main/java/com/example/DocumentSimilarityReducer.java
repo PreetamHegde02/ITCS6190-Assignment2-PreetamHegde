@@ -1,7 +1,15 @@
 package com.example;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 
@@ -36,5 +44,32 @@ public class DocumentSimilarityReducer extends Reducer<Text, Text, Text, Text> {
     @Override
     protected void cleanup(Context context) throws IOException, InterruptedException {
         // TODO (only needed if your design compares documents here)
+        List<String> ids = new ArrayList<>(documents.keySet());
+
+        for (int i = 0; i < ids.size(); i++) {
+            for (int j = i + 1; j < ids.size(); j++) {
+                String idA = ids.get(i);
+                String idB = ids.get(j);
+
+                Set<String> a = documents.get(idA);
+                Set<String> b = documents.get(idB);
+
+                Set<String> intersection = new HashSet<>(a);
+                intersection.retainAll(b);
+
+                if (intersection.isEmpty()) {
+                    continue;
+                }
+
+                Set<String> union = new HashSet<>(a);
+                union.addAll(b);
+
+                double similarity = (double) intersection.size() / union.size();
+                String line = String.format(Locale.US, "%s, %s Similarity: %.2f",
+                        idA, idB, similarity);
+
+                context.write(new Text(line), NullWritable.get());
+            }
+        }
     }
 }

@@ -33,7 +33,29 @@ public class DocumentSimilarityMapper extends Mapper<LongWritable, Text, Text, T
     protected void map(LongWritable key, Text value, Context context)
             throws IOException, InterruptedException {
         // TODO: split the line into the document ID and the text,
-        //       tokenize the text following the rules above,
-        //       and emit what the reducer needs.
+        // tokenize the text following the rules above,
+        // and emit what the reducer needs.
+        String line = value.toString().trim();
+        if (line.isEmpty()) {
+            return;
+        }
+
+        String[] parts = line.split("\\s+", 2);
+        if (parts.length < 2) {
+            return;
+        }
+        String docId = parts[0];
+
+        TreeSet<String> words = new TreeSet<>();
+        for (String token : parts[1].toLowerCase().split("\\s+")) {
+            String cleaned = token.replaceAll("[^a-z0-9]", "");
+            if (!cleaned.isEmpty()) {
+                words.add(cleaned);
+            }
+        }
+
+        if (!words.isEmpty()) {
+            context.write(new Text(docId), new Text(String.join(" ", words)));
+        }
     }
 }
